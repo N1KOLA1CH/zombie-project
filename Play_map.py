@@ -77,7 +77,6 @@ class MyGame(arcade.View):
 
         # лазание
         self.climb_textures = [arcade.load_texture(f"assets/images/anim/climb/{i}.png") for i in range(1, 4)]
-
         self.cur_frame = 0
         self.animation_timer = 0
         self.facing_right = True
@@ -104,7 +103,8 @@ class MyGame(arcade.View):
             player_sprite=self.player,
             gravity_constant=GRAVITY,
             walls=self.scene['walls'],
-            ladders=self.scene['ladders']
+            ladders=self.scene['ladders'],
+            platforms=self.scene['platforms'],
         )
         self.blood_textures = [
             arcade.load_texture('assets/images/died_animation/1.png'),
@@ -181,6 +181,7 @@ class MyGame(arcade.View):
     def on_update(self, delta_time):
         if self.paused:
             return
+        was_on_ground = self.physics_engine.can_jump(y_distance=6)
 
         coin_hit_list = arcade.check_for_collision_with_list(self.player, self.scene['Coin'])
         for coin in coin_hit_list:
@@ -251,6 +252,35 @@ class MyGame(arcade.View):
                 self.time_since_ground = 999.0
 
         self.physics_engine.update()
+        is_on_ground = self.physics_engine.can_jump(y_distance=6)
+
+        if is_on_ground and not was_on_ground:
+            land_e = Emitter(
+                center_xy=(self.player.center_x, self.player.bottom),
+                emit_controller=EmitBurst(5),
+                particle_factory=lambda e: FadeParticle(
+                    filename_or_texture=arcade.make_circle_texture(4, arcade.color.LIGHT_GRAY),
+                    change_xy=(random.uniform(-2, 2), random.uniform(0, 2)),
+                    lifetime=0.3,
+                    mutation_callback=self.smoke_mutator
+                )
+            )
+            self.emitters.append(land_e)
+
+        if is_on_ground and abs(self.player.change_x) > 0.1:
+            if random.random() < 0.15:
+                run_e = Emitter(
+                    center_xy=(self.player.center_x, self.player.bottom),
+                    emit_controller=EmitBurst(1),
+                    particle_factory=lambda e: FadeParticle(
+                        filename_or_texture=arcade.make_circle_texture(random.randint(2, 4), arcade.color.GRAY),
+                        change_xy=(random.uniform(-1, 1), random.uniform(0, 1)),
+                        lifetime=0.4,
+                        mutation_callback=self.smoke_mutator
+                    )
+                )
+                self.emitters.append(run_e)
+
         self.animation_timer += delta_time
         if self.animation_timer > 0.1:
             self.animation_timer = 0
