@@ -1,43 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="60" height="30" tilewidth="70" tileheight="70" infinite="0" nextlayerid="19" nextobjectid="58">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="60" height="30" tilewidth="70" tileheight="70" infinite="0" nextlayerid="22" nextobjectid="73">
  <tileset firstgid="1" source="tiles_spritesheet.tsx"/>
  <tileset firstgid="157" source="Walk.tsx"/>
  <tileset firstgid="165" source="spinning coin.tsx"/>
  <tileset firstgid="171" source="sheet.tsx"/>
  <tileset firstgid="269" source="Dungeon Tile Set.tsx"/>
- <imagelayer id="17" name="Слой изображений 1" visible="0" locked="1" repeatx="1" repeaty="1">
-  <image source="../images/back.png" width="736" height="736"/>
- </imagelayer>
- <layer id="8" name="exit" width="60" height="30" locked="1">
-  <data encoding="base64" compression="zlib">
-   eJztzjERACAMBLAy4l8nClhw0b9yiYJU8aOTDjS76UCzvdIDAAAAAABgqgdBDQHz
-  </data>
- </layer>
- <layer id="16" name="custom" width="60" height="30" locked="1">
-  <data encoding="base64" compression="zlib">
-   eJzt1EsOwCAIBUBP4/2P2EXXtWn9EZzZmwA+KAWgre4uYLLe/lrvV84u+z/BiUbttfuwV4b5Z+jhzQk9whdPO2FXblHmEKUO+EuG6TEyP6uzKPtABBeumQKt
-  </data>
- </layer>
- <layer id="1" name="walls" width="60" height="30" locked="1">
-  <data encoding="base64" compression="zlib">
-   eJzt1kEKgCAQQFEP2gU6QEeYe1cLQUKbLNP6Mx/cRFQPlElCCGJsWcm97Cx4rZzfnI3oPTPRvJqlxjt6Zvaav6Q9oFkozph2tmmVvETrHulsXsm97EbPwZ5zNfVayb3sWnvj85ZtTZk1N3zXnWrP+fHev+2N1CCF66SorlJk75M5Tcm97Kx6v/Zf/+Y3rtBOmdo=
-  </data>
- </layer>
- <layer id="7" name="collision" width="60" height="30" visible="0" locked="1">
-  <data encoding="base64" compression="zlib">
-   eJzt1ksKgDAMRdG4jOx/o+JAKJJaC/3IfbnQiTjoAUN0M3Oxo1J62Sl4VeY3shG9byaat2Xp8e7emav2L+kbaFkozrvWbNOqeYnWK9Jsfim97HbvwZV7tfSqlF52o70jZmxmvXP+fHf3/XsrDV55TorqqkX2HsEhe6PSy07V+7f/+pl3PAHizRyj
-  </data>
- </layer>
- <layer id="10" name="lava" class="Lava" width="60" height="30" locked="1">
-  <data encoding="base64" compression="zlib">
-   eJztw0EJAAAIBLDrX8C6ZjgQXxssAQAAAAAAAD5N8doCvwYGfg==
-  </data>
- </layer>
- <layer id="14" name="spawn" width="60" height="30" locked="1">
-  <data encoding="base64" compression="zlib">
-   eJztzjERAAAIBKC3fyirORvAc4EEJAAAAAAAALB1fQ+4MoEuAME=
-  </data>
- </layer>
+ <tileset firstgid="539" source="Lightning Trap - Level 3.tsx"/>
+ <objectgroup id="21" name="lch" locked="1">
+  <object id="66" gid="539" x="855.03" y="2041.94" width="96" height="96"/>
+  <object id="70" gid="558" x="1015.64" y="2011.64" width="96" height="96"/>
+ </objectgroup>
  <objectgroup id="13" name="Coin" class="Coin" locked="1">
   <object id="47" gid="170" x="1751.82" y="1392.18" width="70" height="70"/>
   <object id="49" gid="170" x="3920.67" y="260" width="70" height="70"/>
@@ -147,6 +119,39 @@
    </properties>
   </object>
  </objectgroup>
+ <imagelayer id="17" name="Слой изображений 1" visible="0" locked="1" repeatx="1" repeaty="1">
+  <image source="../images/back.png" width="736" height="736"/>
+ </imagelayer>
+ <layer id="8" name="exit" width="60" height="30" locked="1">
+  <data encoding="base64" compression="zlib">
+   eJztzjERACAMBLAy4l8nClhw0b9yiYJU8aOTDjS76UCzvdIDAAAAAABgqgdBDQHz
+  </data>
+ </layer>
+ <layer id="16" name="custom" width="60" height="30" locked="1">
+  <data encoding="base64" compression="zlib">
+   eJzt1EsOwCAIBUBP4/2P2EXXtWn9EZzZmwA+KAWgre4uYLLe/lrvV84u+z/BiUbttfuwV4b5Z+jhzQk9whdPO2FXblHmEKUO+EuG6TEyP6uzKPtABBeumQKt
+  </data>
+ </layer>
+ <layer id="1" name="walls" width="60" height="30" locked="1">
+  <data encoding="base64" compression="zlib">
+   eJzt1kEKgCAQQFEP2gU6QEeYe1cLQUKbLNP6Mx/cRFQPlElCCGJsWcm97Cx4rZzfnI3oPTPRvJqlxjt6Zvaav6Q9oFkozph2tmmVvETrHulsXsm97EbPwZ5zNfVayb3sWnvj85ZtTZk1N3zXnWrP+fHev+2N1CCF66SorlJk75M5Tcm97Kx6v/Zf/+Y3rtBOmdo=
+  </data>
+ </layer>
+ <layer id="7" name="collision" width="60" height="30" visible="0" locked="1">
+  <data encoding="base64" compression="zlib">
+   eJzt1ksKgDAMRdG4jOx/o+JAKJJaC/3IfbnQiTjoAUN0M3Oxo1J62Sl4VeY3shG9byaat2Xp8e7emav2L+kbaFkozrvWbNOqeYnWK9Jsfim97HbvwZV7tfSqlF52o70jZmxmvXP+fHf3/XsrDV55TorqqkX2HsEhe6PSy07V+7f/+pl3PAHizRyj
+  </data>
+ </layer>
+ <layer id="10" name="lava" class="Lava" width="60" height="30" locked="1">
+  <data encoding="base64" compression="zlib">
+   eJztw0EJAAAIBLDrX8C6ZjgQXxssAQAAAAAAAD5N8doCvwYGfg==
+  </data>
+ </layer>
+ <layer id="14" name="spawn" width="60" height="30" locked="1">
+  <data encoding="base64" compression="zlib">
+   eJztzjERAAAIBKC3fyirORvAc4EEJAAAAAAAALB1fQ+4MoEuAME=
+  </data>
+ </layer>
  <layer id="11" name="platform" width="60" height="30" locked="1">
   <data encoding="base64" compression="zlib">
    eJztw7EJAAAIA7A+7u+und2EBJIAAAAAAAD8MBW4WeT4AXg=

@@ -1,5 +1,4 @@
 import random
-
 import arcade
 import time
 from arcade.camera import Camera2D
@@ -9,19 +8,18 @@ SCREEN_W = 1280
 SCREEN_H = 720
 
 # скорость игрока
-MOVE_SPEED = 8
-LADDER_SPEED = 5
+MOVE_SPEED = 2
+LADDER_SPEED = 2
 
 # настройки прыжков
 COYOTE_TIME = 0.15
 JUMP_BUFFER = 0.12
-MAX_JUMPS = 1
-GRAVITY = 0.5
-JUMP_SPEED = 15
+MAX_JUMPS = 0
+GRAVITY = 0.8
+JUMP_SPEED = 9
 
 # Зомби настройки
 AGGRO_DISTANCE = 500
-ZOMBIE_SPEED = 2
 PATROL_DISTANCE = 200
 
 
@@ -54,31 +52,49 @@ class MyGame(arcade.View):
         self.jumps_left = MAX_JUMPS
 
         self.health = 3
-        self.score = 0
         self.safe_time = 0
 
         self.coins_collected = 0
         self.total_coins = 0
         self.coin_message_timer = 0.0
         self.paused = False
+        self.zombie_killed = 0
+        self.died_by_zombie = 0
+        self.died_by_lava = 0
+
+        #       АНИМАЦИИ
+        # бег
+        self.run_textures_right = [arcade.load_texture(f"assets/images/anim/run/{i}.png") for i in range(1, 7)]
+        self.run_textures_left = [tex.flip_left_right() for tex in self.run_textures_right]
+
+        # покой
+        self.idle_textures_right = [arcade.load_texture(f"assets/images/anim/idle/{i}.png") for i in range(1, 3)]
+        self.idle_textures_left = [tex.flip_left_right() for tex in self.idle_textures_right]
+
+        # прыжоК
+        self.jump_textures_right = [arcade.load_texture(f"assets/images/anim/jump/{i}.png") for i in range(1, 3)]
+        self.jump_textures_left = [tex.flip_left_right() for tex in self.jump_textures_right]
+
+        # лазание
+        self.climb_textures = [arcade.load_texture(f"assets/images/anim/climb/{i}.png") for i in range(1, 4)]
+
+        self.cur_frame = 0
+        self.animation_timer = 0
+        self.facing_right = True
 
     def setup(self):
-        map_name = 'assets/tiles/one_level.tmx'
+        map_name = 'assets/tiles/second.tmx'
         layer_options = {
-            'platform': {'use_spatial_hash': True},
             'walls': {'use_spatial_hash': True},
             'lava': {'use_spatial_hash': False},
         }
         self.tile_map = arcade.load_tilemap(map_name, scaling=1.0, layer_options=layer_options)
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
-
         self.hearts = arcade.load_texture('assets/images/heart.jpg')
 
-        self.player = arcade.Sprite(
-            ':resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png',
-            scale=0.4
-        )
+        self.player = arcade.Sprite(scale=0.4)
+        self.player.texture = self.idle_textures_right[0]
 
         self.spawn = self.tile_map.sprite_lists['spawn'][0]
         self.respawn()
@@ -88,7 +104,6 @@ class MyGame(arcade.View):
             player_sprite=self.player,
             gravity_constant=GRAVITY,
             walls=self.scene['walls'],
-            platforms=self.scene['platform'],
             ladders=self.scene['ladders']
         )
         self.blood_textures = [
@@ -105,7 +120,6 @@ class MyGame(arcade.View):
         self.coins_collected = 0
         self.total_coins = 3
         self.health = 3
-        self.score = 0
         self.coin_message_timer = 0.0
 
         self.dropped_coin = self.scene['Coin'][0]
@@ -123,9 +137,6 @@ class MyGame(arcade.View):
         p.scale_x *= 1.02
         p.scale_y *= 1.02
         p.alpha = max(0, p.alpha - 2)
-
-
-
 
     def on_draw(self):
         self.clear()
@@ -162,9 +173,10 @@ class MyGame(arcade.View):
 
         if self.paused:
             arcade.draw_lrbt_rectangle_filled(0, SCREEN_W, 0, SCREEN_H, (0, 0, 0, 150))
-            arcade.draw_text('ПАУЗА\nESC - Играть | R - Рестарт', SCREEN_W / 2, SCREEN_H / 2,
-                             arcade.color.WHITE, 30, anchor_x='center', multiline=True, width=500)
+            arcade.draw_text('ПАУЗА\nESC - Играть | R - Рестарт | M - Меню', SCREEN_W / 2, SCREEN_H / 2,
+                             arcade.color.WHITE, 30, anchor_x='center', multiline=True, width=650)
 
+        self.scene["zombie"].draw_hit_boxes(arcade.color.WHITE)
 
     def on_update(self, delta_time):
         if self.paused:
@@ -184,7 +196,6 @@ class MyGame(arcade.View):
             else:
                 self.coin_message_timer = 5.0
 
-
         if self.coin_message_timer > 0:
             self.coin_message_timer -= delta_time
 
@@ -193,7 +204,7 @@ class MyGame(arcade.View):
         elif self.zoom_out_pressed:
             self.view_zoom -= 0.01
 
-        self.view_zoom = arcade.math.clamp(self.view_zoom, 0.5, 2.0)
+        self.view_zoom = arcade.math.clamp(self.view_zoom, 3, 5)
         self.world_camera.zoom = self.view_zoom
 
         if self.safe_time > 0:
@@ -227,7 +238,6 @@ class MyGame(arcade.View):
         else:
             self.time_since_ground += delta_time
 
-
         want_jump = self.up_pressed
         if want_jump:
             can_coyote = self.time_since_ground <= COYOTE_TIME
@@ -241,29 +251,64 @@ class MyGame(arcade.View):
                 self.time_since_ground = 999.0
 
         self.physics_engine.update()
+        self.animation_timer += delta_time
+        if self.animation_timer > 0.1:
+            self.animation_timer = 0
+            self.cur_frame += 1
+
+        if self.player.change_x > 0:
+            self.facing_right = True
+        elif self.player.change_x < 0:
+            self.facing_right = False
+
+            # ВЫБОР ТЕКСТУРЫ
+        on_ladder = self.physics_engine.is_on_ladder()
+
+
+        if on_ladder:
+            textures = self.climb_textures
+
+            if abs(self.player.change_y) < 0.1:
+                self.cur_frame = 0
+
+        elif self.player.change_y != 0:
+            textures = self.jump_textures_right if self.facing_right else self.jump_textures_left
+
+            # Бег
+        elif self.player.change_x != 0:
+            textures = self.run_textures_right if self.facing_right else self.run_textures_left
+
+            # Покой
+        else:
+            textures = self.idle_textures_right if self.facing_right else self.idle_textures_left
+
+        if self.cur_frame >= len(textures):
+            self.cur_frame = 0
+
+        self.player.texture = textures[self.cur_frame]
         self.scene.update_animation(delta_time)
 
         for z in self.scene['zombie']:
             dx = self.player.center_x - z.center_x
             dy = self.player.center_y - z.center_y
-            ZOMBIE_SPEED = z.properties['speed']
+            zombie_speed = z.properties['speed']
 
-            if abs(dx) < AGGRO_DISTANCE and abs(dy) < 50:
+            if abs(dx) < AGGRO_DISTANCE and abs(dy) < 10:
                 if dx > 0:
-                    z.change_x = ZOMBIE_SPEED * 2
+                    z.change_x = zombie_speed * 1.5
                 else:
-                    z.change_x = -ZOMBIE_SPEED * 2
+                    z.change_x = -zombie_speed * 1.5
 
 
             # патруль зомби
             else:
                 if z.change_x == 0:
-                    z.change_x = ZOMBIE_SPEED
+                    z.change_x = zombie_speed
 
                 if z.center_x >= z.properties['right_side'] and z.change_x > 0:
-                    z.change_x = -ZOMBIE_SPEED
+                    z.change_x = -zombie_speed
                 elif z.center_x <= z.properties['left_side'] and z.change_x < 0:
-                    z.change_x = ZOMBIE_SPEED
+                    z.change_x = zombie_speed
 
             # отзеркаливание зомби
             if z.change_x > 0:
@@ -273,14 +318,14 @@ class MyGame(arcade.View):
 
             z.center_x += z.change_x
 
-
         if arcade.check_for_collision_with_list(self.player, self.scene['lava']):
             self.health -= 3
+            self.died_by_lava += 1
 
-            if self.health <= 0:
-                death = arcade.load_sound('assets/sound/death.mp3')
-                arcade.play_sound(death, volume=0.5)
-                self.setup()
+        if self.health <= 0:
+            death = arcade.load_sound('assets/sound/death.mp3')
+            arcade.play_sound(death, volume=0.5)
+            self.setup()
 
         # убийство зомби/ получение урона
         zombie_hits = arcade.check_for_collision_with_list(self.player, self.scene['zombie'])
@@ -300,8 +345,8 @@ class MyGame(arcade.View):
                 self.emitters.append(e)
 
                 z.remove_from_sprite_lists()
-                self.player.change_y = 10
-                self.score += 100
+                self.player.change_y = 5
+                self.zombie_killed += 1
 
                 if z.properties.get('has_coin'):
                     delay = 0.1
@@ -315,12 +360,13 @@ class MyGame(arcade.View):
                 self.health -= 1
                 self.safe_time = 1.0
                 direction = -1 if self.player.center_x < z.center_x else 1
-                self.player.change_x = direction * 10
-                self.player.change_y = 8
+                self.player.change_x = direction * 3
+                self.player.change_y = 6
 
                 if self.health <= 0:
                     death = arcade.load_sound('assets/sound/death.mp3')
                     arcade.play_sound(death, volume=0.5, loop=False)
+                    self.died_by_zombie += 1
 
                     self.setup()
 
@@ -341,7 +387,6 @@ class MyGame(arcade.View):
             e.update(delta_time)
             if e.can_reap():
                 self.emitters.remove(e)
-
 
         self.world_camera.position = (self.player.center_x, self.player.center_y)
 
