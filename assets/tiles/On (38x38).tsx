@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tileset version="1.10" tiledversion="1.11.2" name="On (38x38)" tilewidth="38" tileheight="38" tilecount="8" columns="8">
- <image source="C:/Users/sasha/Desktop/tilesheets/Free/Traps/Saw/On (38x38).png" width="304" height="38"/>
+ <image source="../images/On (38x38).png" width="304" height="38"/>
  <tile id="2">
   <animation>
    <frame tileid="0" duration="100"/>

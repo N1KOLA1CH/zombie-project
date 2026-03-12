@@ -1,6 +1,7 @@
 import random
 import arcade
 import time
+import csv
 from arcade.camera import Camera2D
 from arcade.particles import FadeParticle, EmitBurst, Emitter
 
@@ -26,8 +27,9 @@ PATROL_DISTANCE = 200
 class MyGame(arcade.View):
     def __init__(self):
         super().__init__()
+        self.player_name = 'Player'
         self.background_music = arcade.load_sound('assets/sound/game_music.mp3')
-        arcade.play_sound(self.background_music, volume=0.1, loop=True)
+        self.music = arcade.play_sound(self.background_music, volume=0.1, loop=True)
 
         self.scene = None
         self.player = None
@@ -81,14 +83,14 @@ class MyGame(arcade.View):
         self.animation_timer = 0
         self.facing_right = True
 
-    def setup(self):
-        map_name = 'assets/tiles/second.tmx'
+    def setup(self, map_name='assets/tiles/1.tmx'):
         layer_options = {
             'walls': {'use_spatial_hash': True},
             'lava': {'use_spatial_hash': False},
         }
         self.tile_map = arcade.load_tilemap(map_name, scaling=1.0, layer_options=layer_options)
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
+        self.current_name_level = map_name
 
         self.hearts = arcade.load_texture('assets/images/heart.jpg')
 
@@ -117,7 +119,7 @@ class MyGame(arcade.View):
 
         self.emitters = []
 
-        self.coins_collected = 0
+        self.coins_collected = 3
         self.total_coins = 3
         self.health = 3
         self.coin_message_timer = 0.0
@@ -176,7 +178,6 @@ class MyGame(arcade.View):
             arcade.draw_text('ПАУЗА\nESC - Играть | R - Рестарт | M - Меню', SCREEN_W / 2, SCREEN_H / 2,
                              arcade.color.WHITE, 30, anchor_x='center', multiline=True, width=650)
 
-        self.scene["zombie"].draw_hit_boxes(arcade.color.WHITE)
 
     def on_update(self, delta_time):
         if self.paused:
@@ -193,7 +194,20 @@ class MyGame(arcade.View):
         exit_hit_list = arcade.check_for_collision_with_list(self.player, self.scene['exit'])
         if exit_hit_list:
             if self.coins_collected >= self.total_coins:
-                print('Уровень пройден!')
+                with open('res.csv', 'a', encoding='utf8') as f:
+                    writer = csv.writer(f)
+                    writer.writerow([
+                        self.player_name,
+                        self.coins_collected,
+                        self.died_by_zombie,
+                        self.zombie_killed,
+                        self.died_by_lava
+                    ])
+                    self.setup('assets/tiles/2.tmx')
+                if self.current_name_level == 'assets/tiles/1.tmx':
+                    self.setup('assets/tiles/2.tmx')
+                else:
+                    pass
             else:
                 self.coin_message_timer = 5.0
 
@@ -348,6 +362,22 @@ class MyGame(arcade.View):
 
             z.center_x += z.change_x
 
+        map_height = self.tile_map.height * self.tile_map.tile_height
+        for s in self.scene['saw']:
+            arcade_vverh = map_height - s.properties['top']
+            arcade_niz = map_height - s.properties['bottom']
+            speed = s.properties['speed']
+
+            if s.change_y == 0:
+                s.change_y = -speed
+
+            if s.center_y >= arcade_vverh and s.change_y > 0:
+                s.change_y = -speed
+            elif s.center_y <= arcade_niz and s.change_y < 0:
+                s.change_y = speed
+
+        self.scene['saw'].update()
+
         if arcade.check_for_collision_with_list(self.player, self.scene['lava']):
             self.health -= 3
             self.died_by_lava += 1
@@ -421,6 +451,7 @@ class MyGame(arcade.View):
         self.world_camera.position = (self.player.center_x, self.player.center_y)
 
     def on_key_press(self, key, modifiers):
+        # пауза
         if key == arcade.key.ESCAPE:
             self.paused = not self.paused
 
@@ -428,6 +459,12 @@ class MyGame(arcade.View):
         if key == arcade.key.R:
             self.setup()
             self.paused = False
+        if self.paused and key == arcade.key.M:
+            arcade.stop_sound(self.music)
+            from Main import Menu
+
+            menu = Menu()
+            self.window.show_view(menu)
 
         if not self.paused:
             if key == arcade.key.SPACE:
