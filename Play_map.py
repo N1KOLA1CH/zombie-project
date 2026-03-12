@@ -53,7 +53,7 @@ class MyGame(arcade.View):
         self.time_since_ground = 999.0
         self.jumps_left = MAX_JUMPS
 
-        self.health = 3
+        self.health = 0
         self.safe_time = 0
 
         self.coins_collected = 0
@@ -83,7 +83,7 @@ class MyGame(arcade.View):
         self.animation_timer = 0
         self.facing_right = True
 
-    def setup(self, map_name='assets/tiles/1.tmx'):
+    def setup(self, map_name='assets/tiles/2.tmx'):
         layer_options = {
             'walls': {'use_spatial_hash': True},
             'lava': {'use_spatial_hash': False},
@@ -119,7 +119,7 @@ class MyGame(arcade.View):
 
         self.emitters = []
 
-        self.coins_collected = 3
+        self.coins_collected = 0
         self.total_coins = 3
         self.health = 3
         self.coin_message_timer = 0.0
@@ -140,12 +140,57 @@ class MyGame(arcade.View):
         p.scale_y *= 1.02
         p.alpha = max(0, p.alpha - 2)
 
+    def show_victory(self):
+
+        self.victory_manager = arcade.gui.UIManager()
+        self.victory_manager.enable()
+
+
+        v_box = arcade.gui.UIBoxLayout(space_between=20)
+
+
+        title = arcade.gui.UILabel(text="ПОБЕДА!", font_size=30, text_color=arcade.color.GOLD)
+        v_box.add(title)
+
+        #
+        stats_text = f"Собрано монет: {self.coins_collected}\nЗомби убито: {self.zombie_killed}"
+        content = arcade.gui.UILabel(text=stats_text, font_size=16, multiline=True, text_color=arcade.color.WHITE)
+        v_box.add(content)
+
+
+        btn_menu = arcade.gui.UIFlatButton(text="В МЕНЮ", width=200)
+        btn_menu.on_click = self.go_to_menu_action
+        v_box.add(btn_menu)
+
+
+        anchor = arcade.gui.UIAnchorLayout()
+
+
+        bg_tex = arcade.make_soft_square_texture(100, arcade.color.BLACK_OLIVE)
+
+        anchor.add(
+            child=v_box.with_background(texture=bg_tex),
+            anchor_x="center_x",
+            anchor_y="center_y"
+        )
+
+        self.victory_manager.add(anchor)
+        self.paused = True
+
+    def go_to_menu_action(self, event):
+        if hasattr(self, 'victory_manager'):
+            self.victory_manager.disable()
+
+        import Main
+        menu_view = Main.Menu()
+        self.window.show_view(menu_view)
+
     def on_draw(self):
         self.clear()
         self.world_camera.use()
         self.scene.draw()
 
-        # Сообщение о монетах над головой
+
         if self.coin_message_timer > 0:
             remaining = self.total_coins - self.coins_collected
             arcade.draw_text(
@@ -177,6 +222,8 @@ class MyGame(arcade.View):
             arcade.draw_lrbt_rectangle_filled(0, SCREEN_W, 0, SCREEN_H, (0, 0, 0, 150))
             arcade.draw_text('ПАУЗА\nESC - Играть | R - Рестарт | M - Меню', SCREEN_W / 2, SCREEN_H / 2,
                              arcade.color.WHITE, 30, anchor_x='center', multiline=True, width=650)
+        if hasattr(self, 'victory_manager'):
+            self.victory_manager.draw()
 
 
     def on_update(self, delta_time):
@@ -190,11 +237,13 @@ class MyGame(arcade.View):
             self.music = arcade.load_sound('assets/sound/coin.mp3')
             arcade.play_sound(self.music, volume=0.5, loop=False)
             self.coins_collected += 1
+        if arcade.check_for_collision_with_list(self.player, self.scene['saw']):
+            self.health -= 3
 
         exit_hit_list = arcade.check_for_collision_with_list(self.player, self.scene['exit'])
         if exit_hit_list:
             if self.coins_collected >= self.total_coins:
-                with open('res.csv', 'a', encoding='utf8') as f:
+                with open('res.csv', 'a', encoding='utf8', newline='') as f:
                     writer = csv.writer(f)
                     writer.writerow([
                         self.player_name,
@@ -203,12 +252,14 @@ class MyGame(arcade.View):
                         self.zombie_killed,
                         self.died_by_lava
                     ])
-                    self.setup('assets/tiles/2.tmx')
+
                 if self.current_name_level == 'assets/tiles/1.tmx':
                     self.setup('assets/tiles/2.tmx')
-                else:
-                    pass
+                elif self.current_name_level == 'assets/tiles/2.tmx':
+
+                    self.show_victory()
             else:
+
                 self.coin_message_timer = 5.0
 
         if self.coin_message_timer > 0:
@@ -385,7 +436,7 @@ class MyGame(arcade.View):
         if self.health <= 0:
             death = arcade.load_sound('assets/sound/death.mp3')
             arcade.play_sound(death, volume=0.5)
-            self.setup()
+            self.setup(self.current_name_level)
 
         # убийство зомби/ получение урона
         zombie_hits = arcade.check_for_collision_with_list(self.player, self.scene['zombie'])
@@ -428,7 +479,7 @@ class MyGame(arcade.View):
                     arcade.play_sound(death, volume=0.5, loop=False)
                     self.died_by_zombie += 1
 
-                    self.setup()
+                    self.setup(self.current_name_level)
 
         # задержка выпадения монеты с зомби
         if self.pending_coins:
@@ -457,7 +508,7 @@ class MyGame(arcade.View):
 
         # рестарт
         if key == arcade.key.R:
-            self.setup()
+            self.setup(self.current_name_level)
             self.paused = False
         if self.paused and key == arcade.key.M:
             arcade.stop_sound(self.music)

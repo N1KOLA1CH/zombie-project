@@ -2,9 +2,11 @@ import arcade
 import arcade.gui
 
 from Play_map import MyGame
+
 SCREEN_W = 1280
 SCREEN_H = 720
 TITLE = 'Зомбидавитель'
+
 
 class Menu(arcade.View):
     def __init__(self):
@@ -57,6 +59,7 @@ class Menu(arcade.View):
         self.window.show_view(game)
 
     def show_records(self, event):
+        self.manager.disable()
         from Statistisc import RecordsView
         self.window.show_view(RecordsView())
 
@@ -89,41 +92,6 @@ class Menu(arcade.View):
             50,
             anchor_x="center"
         )
-        self.manager.draw()
-
-
-class Victory(arcade.View):
-    def __init__(self, stats):
-        super().__init__()
-        self.stats = stats
-        self.manager = arcade.gui.UIManager()
-        self.manager.enable()
-
-        vert_box = arcade.gui.UIBoxLayout()
-
-        label = arcade.gui.UILabel(text="ПОЗДРАВЛЯЕМ!", font_size=40, text_color=arcade.color.GOLD)
-        score_label = arcade.gui.UILabel(
-            text=f"Вы прошли игру!\nСобрано монет: {stats.coins_collected}",
-            font_size=20, text_color=arcade.color.WHITE, multiline=True
-        )
-
-        button_back = arcade.gui.UIFlatButton(text="В главное меню", width=250)
-        button_back.on_click = self.go_to_menu
-
-        vert_box.add(label.with_padding(bottom=20))
-        vert_box.add(score_label.with_padding(bottom=40))
-        vert_box.add(button_back)
-
-        self.manager.add(arcade.gui.UIAnchorLayout(child=vert_box))
-
-
-    def go_to_menu(self, event):
-        from Main import Menu
-        self.window.show_view(Menu())
-
-    def on_draw(self):
-        self.clear()
-        arcade.draw_lrbt_rectangle_filled(0, SCREEN_W, 0, SCREEN_H, arcade.color.DARK_GREEN)
         self.manager.draw()
 
 
