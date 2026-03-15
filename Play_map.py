@@ -83,7 +83,7 @@ class MyGame(arcade.View):
         self.animation_timer = 0
         self.facing_right = True
 
-    def setup(self, map_name='assets/tiles/2.tmx'):
+    def setup(self, map_name='assets/tiles/1.tmx'):
         layer_options = {
             'walls': {'use_spatial_hash': True},
             'lava': {'use_spatial_hash': False},
